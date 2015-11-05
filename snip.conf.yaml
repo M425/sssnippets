@@ -1,0 +1,5 @@
+---
+and_chars:
+  - "&"
+  - "+"
+data_file: "~/.snipdata.json"
