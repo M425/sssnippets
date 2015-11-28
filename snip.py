@@ -54,18 +54,9 @@ GLOBAL DATA
 
 filename = home+"/.snipdata.json"
 and_chars = ['&', '+']
-try:
-    with open("snip.conf.yaml", "r") as stream:
-        conf_data = yaml.load(stream)
-        filename = conf_data['data_file']
-        if filename[0] == '~':
-            filename = home + filename[1:]
-        and_chars = conf_data['and_chars']
-except IOError:
-    print_fail('No conf file found')
-    pass
 args = sys.argv[1:]
 data = []
+history = []
 add_tag_added, add_tag_total = 0, 0
 options = {
     'show-desc': True,
@@ -95,6 +86,16 @@ options_arg = [{
         'setto': ['all']
     }
 ]
+class L(list):
+    def append(self, item):
+        list.append(self, item)
+        if len(self) > 9: self[:1]=[]
+    @staticmethod
+    def create(l):
+        newlist = L()
+        for item in l:
+            newlist.append(item)
+        return newlist
 
 
 '''
@@ -171,6 +172,12 @@ def show_entries(output):
                       colorama.Style.RESET_ALL + colorama.Fore.RESET
         c += 1
 
+def show_history():
+    global history
+    c = 0
+    for entry in reversed(history):
+        print colorama.Style.BRIGHT + '%3d) ' % (c) + 'snip '+entry  + colorama.Style.RESET_ALL
+        c += 1
 
 def short(s, maxlen=20):
     shorts = s
@@ -185,12 +192,23 @@ DATA HANDLING FUNCTIONS
 
 def copy_func(output, index):
     global imported_libs
-    s = output[index]['snip']
-    if imported_libs['pyperclip']:
-        pyperclip.copy(s)
-        print_ok('Copyied #'+str(index)+' to clipboard: "'+short(s)+'"')
-    else:
-        print_fail('Clipboard module is not active')
+    if len(output)>0:
+        s = output[index]['snip']
+        if imported_libs['pyperclip']:
+            pyperclip.copy(s)
+            print_ok('Copyied #'+str(index)+' to clipboard: "'+short(s)+'"')
+        else:
+            print_fail('Clipboard module is not active')
+def copy_hist(index):
+    global imported_libs
+    global history
+    if len(history)>0:
+        s = 'snip '+history[len(history)-1-int(index)]
+        if imported_libs['pyperclip']:
+            pyperclip.copy(s)
+            print_ok('Copyied #'+str(index)+' to clipboard: "'+short(s)+'"')
+        else:
+            print_fail('Clipboard module is not active')
 
 
 def meta_search(regex):
@@ -227,20 +245,28 @@ READ and WRITE DATA
 
 def data_read():
     global data
+    global history
     try:
         datafile_in = open(filename, "r")
-        data = json.loads(datafile_in.read())
+        all = json.loads(datafile_in.read())
+        data = all['data']
+        history = L.create(all['history'])
         datafile_in.close()
     except IOError:
         print_fail('No data found')
         pass
-    return data
+    return data, history
 
 
 def data_dump():
     global data
+    global history
+    all = {
+        'data': data,
+        'history': history
+        }
     datafile_out = open(filename, "w")
-    datafile_out.write(json.dumps(data))
+    datafile_out.write(json.dumps(all))
     datafile_out.close()
 
 
@@ -287,9 +313,20 @@ def read_arg():
 MAIN
 '''
 
+try:
+    with open(home+"/.config/snippets/snip.conf.yaml", "r") as stream:
+        conf_data = yaml.load(stream)
+        filename = conf_data['data_file']
+        if filename[0] == '~':
+            filename = home + filename[1:]
+        and_chars = conf_data['and_chars']
+except IOError:
+    print_fail('No conf file found')
+    pass
 
 def main():
     global data
+    global history
     global options
     global args
     global add_tag_added
@@ -316,20 +353,30 @@ def main():
             print_cyan('--> r|remtag <*tag> <*regex>\n' +
                        '    to remove the <tag> to all entries identifies by <regex>')
 
+            print_cyan('--> y|history\n' +
+                       '    show history')
+
             print_cyan('--> h|help: print this snip')
             return
-        data = data_read()
-
+        data, history = data_read()
+        if not( len(args)!=0 and args[0] == 'y'):
+            history.append(' '.join(args))
         cmd = read_arg()
         if cmd in ['s', 'search']:
             args_must_be(0)
             to_search = '.*'
             if len(args) >= 1:
-                to_search = args[0]
+                if args[-1].isdigit():
+                    to_search = '+'.join(args[0:-1])
+                else:
+                    to_search = '+'.join(args)
             output, _ = meta_search(to_search)
             show_entries(output)
-            if len(args) == 2:
+            if len(args) >= 1 and args[-1].isdigit():
                 copy_func(output, int(args[1]))
+            else:
+                copy_func(output, 0)
+            data_dump()
         elif cmd in ['t', 'attach']:
             args_must_be(2)
             tag, regex = args[0], args[1]
@@ -370,6 +417,10 @@ def main():
                     del data[i]
                 print_ok("Deleted %d entries" % (len(index_list)))
             data_dump()
+        elif cmd in ['y', 'history']:
+            show_history()
+            if len(args)>0 and args[-1].isdigit():
+                copy_hist(args[-1])
         else:
             raise InvalidArgs('Command "%s" not found' % cmd)
 
