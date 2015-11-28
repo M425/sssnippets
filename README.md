@@ -28,8 +28,8 @@ By default only the description is shown to the output.
 ## Configuration
 
 The configuration file is named `snip.conf.yaml`
-- and_chars: the chars which correspond to `and` in the regex (& is the default, but writing \& each time could be boring, <tag1>+<tag2> could be better)
-- data_file: the file to store the the snippets
+- `and_chars`: the chars which correspond to `and` in the regex (`&` is the default, but writing `\&` each time could be boring, `<tag1>+<tag2>` could be better)
+- `data_file`: the file to store the the snippets
 
 ## Dependencies
 
