@@ -65,27 +65,28 @@ options = {
     'search': 'tags'
 }
 options_arg = [{
-        'args': ['-s', '--output-search'],
-        'desc': 'shows snippet in output',
-        'fields': ['show-snip'],
-        'setto': [True]
-    }, {
-        'args': ['-t', '--output-tags'],
-        'desc': 'shows tags in output',
-        'fields': ['show-tags'],
-        'setto': [True]
-    }, {
-        'args': ['-o', '--output-all'],
-        'desc': 'shows all in output',
-        'fields': ['show-tags', 'show-snip'],
-        'setto': [True, True]
-    }, {
-        'args': ['-a', '--search-all'],
-        'desc': 'search in all fields',
-        'fields': ['search'],
-        'setto': ['all']
-    }
-]
+    'args': ['-s', '--output-search'],
+    'desc': 'shows snippet in output',
+    'fields': ['show-snip'],
+    'setto': [True]
+}, {
+    'args': ['-t', '--output-tags'],
+    'desc': 'shows tags in output',
+    'fields': ['show-tags'],
+    'setto': [True]
+}, {
+    'args': ['-o', '--output-all'],
+    'desc': 'shows all in output',
+    'fields': ['show-tags', 'show-snip'],
+    'setto': [True, True]
+}, {
+    'args': ['-a', '--search-all'],
+    'desc': 'search in all fields',
+    'fields': ['search'],
+    'setto': ['all']
+}]
+
+
 class L(list):
     def append(self, item):
         list.append(self, item)
@@ -314,7 +315,7 @@ MAIN
 '''
 
 try:
-    with open(home+"/.config/snippets/snip.conf.yaml", "r") as stream:
+    with open(home + "/.config/sssnippets/snip.conf.yaml", "r") as stream:
         conf_data = yaml.load(stream)
         filename = conf_data['data_file']
         if filename[0] == '~':
@@ -323,6 +324,7 @@ try:
 except IOError:
     print_fail('No conf file found')
     pass
+
 
 def main():
     global data
@@ -419,7 +421,7 @@ def main():
             data_dump()
         elif cmd in ['y', 'history']:
             show_history()
-            if len(args)>0 and args[-1].isdigit():
+            if len(args) > 0 and args[-1].isdigit():
                 copy_hist(args[-1])
         else:
             raise InvalidArgs('Command "%s" not found' % cmd)
